@@ -5,7 +5,7 @@ import { Bot, InlineKeyboard } from "grammy";
 let screaming = false;
 
 //Create a new bot
-const bot = new Bot("5941272399:AAHttqkPpnRVlyycNte2Nf4vSTkP9sYgKo0");
+const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
 
 
 
@@ -30,8 +30,25 @@ const tutorialButton = "Tutorial";
 
 //Build keyboards
 const firstMenuMarkup = new InlineKeyboard().text(nextButton, backButton);
- 
+
 const secondMenuMarkup = new InlineKeyboard().text(backButton, backButton).text(tutorialButton, "https://core.telegram.org/bots/tutorial");
+
+const DEFAULT_INTERVAL_VALUE = 10000;
+
+let sendInterval: any;
+bot.hears(/\/send|\/stop/, (ctx) => {
+  if (sendInterval) {
+    clearInterval(sendInterval);
+  }
+
+  if (/\/send/.test(String(ctx.update.message?.text))) {
+    sendInterval = setInterval(() => {
+      ctx.reply('Sending!!!');
+    }, DEFAULT_INTERVAL_VALUE);
+  } else if (/\/stop/.test(String(ctx.update.message?.text))) {
+    ctx.reply('stopping!');
+  }
+});
 
 
 //This handler sends a menu with the inline buttons we pre-assigned above
@@ -70,9 +87,9 @@ bot.on("message", async (ctx) => {
     }`,
   );
 
-  if (screaming && ctx.message.text) {
+  if (ctx.message.text) {
     //Scream the message
-    await ctx.reply(ctx.message.text.toUpperCase(), {
+    await ctx.reply(ctx.message.text.toUpperCase() + '  ' + ctx.from.first_name, {
       entities: ctx.message.entities,
     });
   } else {
