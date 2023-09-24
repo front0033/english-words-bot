@@ -1,72 +1,63 @@
 import { Bot, InlineKeyboard } from "grammy";
+
 import { ChartGPTService } from "./chartGPT/ChartGPTService";
-
-
-
-//Store bot screaming status
-let screaming = false;
+import { DEFAULT_INTERVAL_VALUE } from "./config";
+import { firstMenu } from "./bot/ui/menu";
+import { addWordButton, startLearningAddedWordsButton, stopLearningAddedWordsButton } from "./bot/ui/buttons";
+import { ADD, SEND, STOP } from "./bot/actions";
 
 //Create a new bot
 const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
 
-//Pre-assign menu text
-const firstMenu = "<b>Menu 1</b>\n\nA beautiful menu with a shiny inline button.";
-const secondMenu = "<b>Menu 2</b>\n\nA better menu with even more shiny inline buttons.";
-
-//Pre-assign button text
-const nextButton = "Next";
-const backButton = "Back";
-const tutorialButton = "Tutorial";
-
 //Build keyboards
-const firstMenuMarkup = new InlineKeyboard().text(nextButton, backButton);
-
-const secondMenuMarkup = new InlineKeyboard().text(backButton, backButton).text(tutorialButton, "https://core.telegram.org/bots/tutorial");
-
-const DEFAULT_INTERVAL_VALUE = 10000;
+const firstMenuMarkup = new InlineKeyboard()
+  .text(addWordButton, ADD)
+  .text(startLearningAddedWordsButton, SEND)
+  .text(stopLearningAddedWordsButton, STOP);
 
 let sendInterval: any;
-bot.hears(/\/send|\/stop/, (ctx) => {
+
+bot.callbackQuery(SEND, async (ctx) => {
+  const sendRandomQuestion = async () => {
+    const question = await ChartGPTService.ensure().randomQuestion();
+
+    await ctx.reply(question || '', {
+      entities: ctx.message?.entities,
+    });
+  }
+  if (sendInterval) {
+    clearInterval(sendInterval);
+  } else {
+    sendRandomQuestion();
+  }
+
+  sendInterval = setInterval(async () => {
+    sendRandomQuestion();
+  }, DEFAULT_INTERVAL_VALUE);
+});
+
+const stopSending = () => {
   if (sendInterval) {
     clearInterval(sendInterval);
   }
+}
 
-  if (/\/send/.test(String(ctx.update.message?.text))) {
-    sendInterval = setInterval(() => {
-      ctx.reply('Sending!!!');
-    }, DEFAULT_INTERVAL_VALUE);
-  } else if (/\/stop/.test(String(ctx.update.message?.text))) {
-    ctx.reply('stopping!');
-  }
+bot.callbackQuery(STOP, async (ctx) => {
+  stopSending();
+  ctx.reply('stopping!');
+})
+
+bot.hears(/\/stop/, (ctx) => {
+  stopSending();
+  ctx.reply('stopping!');
 });
 
-
-//This handler sends a menu with the inline buttons we pre-assigned above
 bot.command("menu", async (ctx) => {
   await ctx.reply(firstMenu, {
     parse_mode: "HTML",
     reply_markup: firstMenuMarkup,
   });
 });
-
-//This handler processes back button on the menu
-bot.callbackQuery(backButton, async (ctx) => {
-  //Update message content with corresponding menu section
-  await ctx.editMessageText(firstMenu, {
-    reply_markup: firstMenuMarkup,
-    parse_mode: "HTML",
-   });
- });
-
-//This handler processes next button on the menu
-bot.callbackQuery(nextButton, async (ctx) => {
-  //Update message content with corresponding menu section
-  await ctx.editMessageText(secondMenu, {
-    reply_markup: secondMenuMarkup,
-    parse_mode: "HTML",
-   });
- });
-
 
 //This function would be added to the dispatcher as a handler for messages coming from the Bot API
 bot.on("message", async (ctx) => {

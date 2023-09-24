@@ -20,8 +20,20 @@ export class ChartGPTService {
   }
 
   public async getSentenceByWord(word: string): Promise<string | null> {
+    return this.askAIByWord('write sentence with word', word);
+  }
+
+  public async translateWord(word: string): Promise<string | null> {
+    return this.askAIByWord('translate', word);
+  }
+
+  public async randomQuestion(): Promise<string | null> {
+    return this.askAIByWord('say random question by English', '');
+  }
+
+  private async askAIByWord(question: string, word: string): Promise<string | null> {
     const chatCompletion = await this.openai.chat.completions.create({
-      messages: [{ role: 'user', content: `write sentence with word '${word}'` }],
+      messages: [{ role: 'user', content: `${question} '${word}'` }],
       model: 'gpt-3.5-turbo',
     });
 

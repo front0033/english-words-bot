@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { OPENAI_API_KEY } from '../config';
 
 let openai: OpenAI | null = null;
 
@@ -8,7 +9,7 @@ export const ensureChartGPT = () => {
   }
 
   openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: OPENAI_API_KEY,
   });
 
   return openai;
