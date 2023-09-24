@@ -1,4 +1,6 @@
 import { Bot, InlineKeyboard } from "grammy";
+import { ChartGPTService } from "./chartGPT/ChartGPTService";
+
 
 
 //Store bot screaming status
@@ -6,18 +8,6 @@ let screaming = false;
 
 //Create a new bot
 const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
-
-
-
-//This function handles the /scream command
-bot.command("scream", () => {
-   screaming = true;
- });
-
-//This function handles /whisper command
-bot.command("whisper", () => {
-   screaming = false;
- });
 
 //Pre-assign menu text
 const firstMenu = "<b>Menu 1</b>\n\nA beautiful menu with a shiny inline button.";
@@ -88,8 +78,10 @@ bot.on("message", async (ctx) => {
   );
 
   if (ctx.message.text) {
-    //Scream the message
-    await ctx.reply(ctx.message.text.toUpperCase() + '  ' + ctx.from.first_name, {
+    const sentenceFromAI = await ChartGPTService.ensure().getSentenceByWord(ctx.message.text);
+    const replyMessage = sentenceFromAI || ctx.message.text.toUpperCase() + '  ' + ctx.from.first_name;
+
+    await ctx.reply(replyMessage, {
       entities: ctx.message.entities,
     });
   } else {
