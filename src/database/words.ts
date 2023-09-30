@@ -1,7 +1,10 @@
+import { ensureDatabase } from './connect';
+import { DEFAULT_RESOLVE, WORDS_TABLE_NAME } from './constants';
+
 const DEFAULT_DICTIONARY = 'default';
 
 interface Word {
-    value: string;
+    word: string;
     translate: string;
     dictionary: string;
     example: string;
@@ -15,14 +18,8 @@ export class WordsCollector {
         this.words = [];
     }
 
-    public recordWord(value: string, translate: string) {
-        this.words.push({
-            value,
-            translate,
-            dictionary: DEFAULT_DICTIONARY,
-            example: '',
-            lastShow: Date.now(),
-        });
+    public async recordWord(userId: number, word: string, translate?: string) {
+        (await ensureDatabase()).query(`INSERT INTO ${WORDS_TABLE_NAME} (${userId},${word},${DEFAULT_RESOLVE},${new Date()},${translate || null})`);
     }
 
     public getRandomWord(): Word {

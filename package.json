@@ -13,6 +13,7 @@
   "dependencies": {
     "@types/node": "^20.6.3",
     "grammy": "^1.11.2",
+    "mysql2": "^3.6.1",
     "openai": "^4.10.0"
   },
   "devDependencies": {
