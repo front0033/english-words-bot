@@ -3,9 +3,10 @@ import { Bot } from "grammy";
 import { ChartGPTService } from "./chartGPT/ChartGPTService";
 import { DEFAULT_INTERVAL_VALUE } from "./config";
 import { firstMenu } from "./bot/ui/menu";
-import { ADD, SEND, STOP } from "./bot/actions";
+import { ADD, SEND, STOP, TRANSLATE } from "./bot/actions";
 import { getFirstMenuMarkup } from "./bot/ui/keyboards/firstMenu";
 import { BotService, MessageEventData } from "./services/BotService";
+import {  } from "./bot/ui/keyboards/translateMenu";
 
 //Create a new bot
 const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
@@ -49,17 +50,17 @@ bot.hears(/\/stop/, (ctx) => {
 });
 
 // слушаем когда пользователь нажмет на кнопку добавить
-bot.hears(/\/add/, async (ctx) => {
+bot.callbackQuery(ADD, async (ctx) => {
   const messageEventData: MessageEventData = botService.addWordEventHandler();
   console.log('---- add ---- ');
   await ctx.reply(messageEventData.replyMessage || '', {
     entities: ctx.message?.entities,
     ...messageEventData,
   });
-});
+ });
 
-bot.hears(/\/translate:/, async (ctx) => {
-  console.log('---- translate ---- ');
+// слушаем когда пользователь выберет перевод
+bot.callbackQuery(TRANSLATE, async (ctx) => {
   if (ctx.message?.text) {
     const messageEventData: MessageEventData = botService.selectTranslateEvetHandler({
       messageText: ctx.message.text || null,
@@ -68,7 +69,8 @@ bot.hears(/\/translate:/, async (ctx) => {
 
     await ctx.reply(messageEventData.replyMessage || '', {
       entities: ctx.message?.entities,
-      ...messageEventData,
+      parse_mode: messageEventData.parseMode,
+      reply_markup: messageEventData.replyMarkup,
     });
   } else {
     console.log('ranslate: ', ctx.message);
@@ -103,7 +105,8 @@ bot.on("message", async (ctx) => {
 
     await ctx.reply(messageEventData.replyMessage || '', {
       entities: ctx.message.entities,
-      ...messageEventData,
+      parse_mode: messageEventData.parseMode,
+      reply_markup: messageEventData.replyMarkup,
     });
   } else {
     //This is equivalent to forwarding, without the sender's name

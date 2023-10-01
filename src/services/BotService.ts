@@ -1,6 +1,5 @@
 import { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply, ParseMode } from "grammy/types";
-import { ADD } from "../bot/actions";
-import { getTranslatetMenuMarkup, TRANSLATE_PREFIX } from "../bot/ui/keyboards/translateMenu";
+import { getTranslatetMenuMarkup } from "../bot/ui/keyboards/translateMenu";
 import { translateMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
 
@@ -66,6 +65,7 @@ export class BotService {
     const chartGPT = ChartGPTService.ensure();
     // когда пользователь находится в режиме добавления слова, он должен получить список возможных переводов к слову
     const translates = await chartGPT.translateWord(messageText || '');
+    console.log('translates: ', translates);
     messageData.replyMessage = translateMenu;
     messageData.parseMode = 'HTML',
     messageData.replyMarkup = getTranslatetMenuMarkup(translates),
@@ -80,8 +80,8 @@ export class BotService {
     const { messageText, firstName } = data;
     const messageData: MessageEventData = {};
 
-    if (messageText?.startsWith(TRANSLATE_PREFIX) && !!this.wordToTranslate) {
-      this.currentTranslate = messageText.replace(TRANSLATE_PREFIX, '');
+    if (!!this.wordToTranslate) {
+      this.currentTranslate = messageText;
       console.log('this.currentTranslate: ', this.currentTranslate);
 
       // далее сохраняем слово в базу данных
@@ -93,5 +93,4 @@ export class BotService {
 
     return messageData;
   }
-
 }

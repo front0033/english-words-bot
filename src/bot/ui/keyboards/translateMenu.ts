@@ -1,6 +1,5 @@
 import { InlineKeyboard } from "grammy";
-
-export const TRANSLATE_PREFIX = 'translate:';
+import { TRANSLATE } from "../../actions";
 
 export function getTranslatetMenuMarkup(transalates: (string | null)[]) {
   //Build keyboard
@@ -8,7 +7,7 @@ export function getTranslatetMenuMarkup(transalates: (string | null)[]) {
 
   transalates.forEach((transalate) => {
     if (transalate) {
-      translateMenuMarkup.text(transalate, `${TRANSLATE_PREFIX}${transalate}`);
+    translateMenuMarkup.text(transalate, TRANSLATE);
     }
   });
 
