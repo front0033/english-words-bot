@@ -1,19 +1,15 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot } from "grammy";
 
 import { ChartGPTService } from "./chartGPT/ChartGPTService";
 import { DEFAULT_INTERVAL_VALUE } from "./config";
 import { firstMenu } from "./bot/ui/menu";
-import { addWordButton, startLearningAddedWordsButton, stopLearningAddedWordsButton } from "./bot/ui/buttons";
 import { ADD, SEND, STOP } from "./bot/actions";
+import { getFirstMenuMarkup } from "./bot/ui/keyboards/firstMenu";
+import { BotService, MessageEventData } from "./services/BotService";
 
 //Create a new bot
 const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
-
-//Build keyboards
-const firstMenuMarkup = new InlineKeyboard()
-  .text(addWordButton, ADD)
-  .text(startLearningAddedWordsButton, SEND)
-  .text(stopLearningAddedWordsButton, STOP);
+const botService = new BotService();
 
 let sendInterval: any;
 
@@ -52,28 +48,62 @@ bot.hears(/\/stop/, (ctx) => {
   ctx.reply('stopping!');
 });
 
-bot.command("menu", async (ctx) => {
-  await ctx.reply(firstMenu, {
-    parse_mode: "HTML",
-    reply_markup: firstMenuMarkup,
+// слушаем когда пользователь нажмет на кнопку добавить
+bot.hears(/\/add/, async (ctx) => {
+  const messageEventData: MessageEventData = botService.addWordEventHandler();
+  console.log('---- add ---- ');
+  await ctx.reply(messageEventData.replyMessage || '', {
+    entities: ctx.message?.entities,
+    ...messageEventData,
   });
 });
 
-//This function would be added to the dispatcher as a handler for messages coming from the Bot API
+bot.hears(/\/translate:/, async (ctx) => {
+  console.log('---- translate ---- ');
+  if (ctx.message?.text) {
+    const messageEventData: MessageEventData = botService.selectTranslateEvetHandler({
+      messageText: ctx.message.text || null,
+      firstName: ctx.from.first_name,
+    });
+
+    await ctx.reply(messageEventData.replyMessage || '', {
+      entities: ctx.message?.entities,
+      ...messageEventData,
+    });
+  } else {
+    console.log('ranslate: ', ctx.message);
+  }
+});
+
+bot.command(['menu', 'start'], async (ctx) => {
+  await ctx.reply(firstMenu, {
+    parse_mode: "HTML",
+    reply_markup: getFirstMenuMarkup(),
+  });
+});
+
+// This function would be added to the dispatcher as a handler for messages coming from the Bot API
 bot.on("message", async (ctx) => {
-  //Print to console
-  console.log(
-    `${ctx.from.first_name} wrote ${
-      "text" in ctx.message ? ctx.message.text : ""
-    }`,
-  );
+
+  let messageEventData: MessageEventData = {};
 
   if (ctx.message.text) {
-    const sentenceFromAI = await ChartGPTService.ensure().getSentenceByWord(ctx.message.text);
-    const replyMessage = sentenceFromAI || ctx.message.text.toUpperCase() + '  ' + ctx.from.first_name;
+    const {first_name, username, id } = ctx.from;
+    //Print to console
+    console.log(
+      `{ first_name: ${first_name}, username: ${username}, id: ${id} }: wrote ${
+        ctx.message.text || ''
+      }`,
+    );
 
-    await ctx.reply(replyMessage, {
+    messageEventData = await botService.messageEventHandler({
+      messageText: ctx.message.text || null,
+      firstName: ctx.from.first_name,
+    });
+
+    await ctx.reply(messageEventData.replyMessage || '', {
       entities: ctx.message.entities,
+      ...messageEventData,
     });
   } else {
     //This is equivalent to forwarding, without the sender's name
