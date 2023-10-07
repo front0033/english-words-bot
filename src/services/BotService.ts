@@ -2,6 +2,8 @@ import { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceRe
 import { getTranslatetMenuMarkup } from "../bot/ui/keyboards/translateMenu";
 import { translateMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
+import { Words } from '../db/words';
+import { connection } from "../db/connect";
 
 export interface MessageEventParams {
   messageText: string | null;
@@ -15,10 +17,17 @@ export interface MessageEventData {
 }
 
 export class BotService {
+  private chartGPTServise: ChartGPTService;
+  private wordsDB: Words;
   private translating: boolean = false;
   private wordToTranslate: string | null = null;
   private currentTranslate: string | null = null;
   private sendInterval: any;
+
+  public constructor() {
+    this.chartGPTServise = ChartGPTService.ensure();
+    this.wordsDB = new Words(connection);
+  }
 
   public async messageEventHandler(data: MessageEventParams): Promise<MessageEventData> {
     const { messageText, firstName } = data;
@@ -62,9 +71,8 @@ export class BotService {
 
     const { messageText } = data;
 
-    const chartGPT = ChartGPTService.ensure();
     // когда пользователь находится в режиме добавления слова, он должен получить список возможных переводов к слову
-    const translates = await chartGPT.translateWord(messageText || '');
+    const translates = await this.chartGPTServise.translateWord(messageText || '');
     console.log('translates: ', translates);
     messageData.replyMessage = translateMenu;
     messageData.parseMode = 'HTML',
@@ -76,7 +84,7 @@ export class BotService {
   }
 
   // когда выбрал перевод, и ожидает что слово сохранится с этим переводом
-  public selectTranslateEvetHandler(data: MessageEventParams): MessageEventData  {
+  public selectTranslateEvetHandler(data: MessageEventParams, userId: number): MessageEventData  {
     const { messageText, firstName } = data;
     const messageData: MessageEventData = {};
 
@@ -85,6 +93,16 @@ export class BotService {
       console.log('this.currentTranslate: ', this.currentTranslate);
 
       // далее сохраняем слово в базу данных
+      this.wordsDB.save({
+        word: this.wordToTranslate,
+        translate: this.currentTranslate,
+        user_id: userId,
+        last_time_to_revise: new Date().toString(),
+        part_of_speech: null,
+        constructor: {
+          name: 'RowDataPacket', // ???
+        },
+      }, userId)
 
       this.translating = false;
       this.wordToTranslate = null;

@@ -1,7 +1,9 @@
 import OpenAI from "openai";
 
 import { ensureChartGPT } from "./ensureChartGPT";
-import { OPENAI_API_MODEL } from "../config";
+import { config } from "../config";
+
+const { OPENAI_API_MODEL } = config;
 
 let instance: ChartGPTService | null = null;
 
@@ -20,10 +22,6 @@ export class ChartGPTService {
     return new ChartGPTService();
   }
 
-  public async getSentenceByWord(word: string): Promise<string | null> {
-    return this.askAIByWord('write sentence with word', word);
-  }
-
   public async translateWord(word: string): Promise<(string | null)[]> {
     const chatCompletion = await this.openai.chat.completions.create({
       messages: [{ role: 'user', content: `translate '${word}' to russian` }],
@@ -40,7 +38,14 @@ export class ChartGPTService {
   }
 
   public async randomQuestionWithWord(word: string): Promise<string | null> {
-    return this.askAIByWord(`say random question by English ${word}`, '');
+    const text = await this.askAIByWord(`say random question by English ${word}`, '');
+    return text?.replace(word, `<b>${word}</b>`) ?? null;
+  }
+
+  public async randomSentenceWithWord(word: string): Promise<string | null> {
+    const text = await this.askAIByWord(`say random sentence by English ${word}`, '');
+
+    return text?.replace(word, `<b>${word}</b>`) ?? null;
   }
 
   private async askAIByWord(question: string, word: string): Promise<string | null> {

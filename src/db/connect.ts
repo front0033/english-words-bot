@@ -1,5 +1,15 @@
-import mysql, { Connection } from 'mysql2';
-import { MYSQL_DATABASE_NAME, MYSQL_DATABASE_PORT, MYSQL_DATABASE_USER, MYSQL_DATABASE_IP, MYSQL_DATABASE_PASSWORD } from '../config';
+import mysql from 'mysql2';
+import { config } from '../config';
+
+const { MYSQL_DATABASE_NAME, MYSQL_DATABASE_PORT, MYSQL_DATABASE_USER, MYSQL_DATABASE_IP, MYSQL_DATABASE_PASSWORD } = config;
+
+// console.table({
+//   MYSQL_DATABASE_NAME: MYSQL_DATABASE_NAME,
+//   MYSQL_DATABASE_PORT: MYSQL_DATABASE_PORT,
+//   MYSQL_DATABASE_USER: MYSQL_DATABASE_USER,
+//   MYSQL_DATABASE_IP: MYSQL_DATABASE_IP,
+//   MYSQL_DATABASE_PASSWORD: MYSQL_DATABASE_PASSWORD
+// });
 
 export const connection = mysql.createConnection({
   database: MYSQL_DATABASE_NAME,

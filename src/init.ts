@@ -1,15 +1,17 @@
 import { Bot } from "grammy";
 
 import { ChartGPTService } from "./chartGPT/ChartGPTService";
-import { DEFAULT_INTERVAL_VALUE } from "./config";
+import { config } from "./config";
 import { firstMenu } from "./bot/ui/menu";
 import { ADD, SEND, STOP, TRANSLATE } from "./bot/actions";
 import { getFirstMenuMarkup } from "./bot/ui/keyboards/firstMenu";
 import { BotService, MessageEventData } from "./services/BotService";
-import {  } from "./bot/ui/keyboards/translateMenu";
+
+const { DEFAULT_INTERVAL_VALUE, TELEGRAM_TOKEN } = config;
 
 //Create a new bot
-const bot = new Bot(String(process.env.TELEGRAM_TOKEN));
+console.log('TELEGRAM_TOKEN: ', TELEGRAM_TOKEN);
+const bot = new Bot(String(TELEGRAM_TOKEN));
 const botService = new BotService();
 
 let sendInterval: any;
@@ -65,7 +67,7 @@ bot.callbackQuery(TRANSLATE, async (ctx) => {
     const messageEventData: MessageEventData = botService.selectTranslateEvetHandler({
       messageText: ctx.message.text || null,
       firstName: ctx.from.first_name,
-    });
+    }, ctx.from.id);
 
     await ctx.reply(messageEventData.replyMessage || '', {
       entities: ctx.message?.entities,

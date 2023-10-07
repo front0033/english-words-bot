@@ -6,7 +6,7 @@ import Word from "./models/word.model";
 export class Words {
   private connection: Connection;
 
-  private constructor(connection: Connection) {
+  public constructor(connection: Connection) {
     this.connection = connection;
   }
 
