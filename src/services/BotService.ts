@@ -19,6 +19,7 @@ export interface MessageEventData {
 
 export enum UserState {
   WORD_ADDING = 'word-adding',
+  STUDING = 'studing',
 }
 
 export class BotService {
