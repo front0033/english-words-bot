@@ -10,19 +10,6 @@ export class Words {
     this.connection = connection;
   }
 
-  public retrieveById(id: number): Promise<Word> {
-    return new Promise((resolve, reject) => {
-      this.connection.query<Word[]>(
-      `SELECT * FROM ${WORDS_TABLE_NAME} WHERE id = ?`,
-      [id],
-      (err, res) => {
-        if (err) reject(`${WORDS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
-        else resolve(res?.[0]);
-      }
-    );
-    });
-  }
-
   public retrieveByUserId(userId: number): Promise<Word> {
     return new Promise((resolve, reject) => {
       this.connection.query<Word[]>(
@@ -43,10 +30,7 @@ export class Words {
         [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null, word.part_of_speech || null],
         (err, res) => {
           if (err) reject(`${WORDS_TABLE_NAME} save ERROR: ${JSON.stringify(err, null, 4)}`);
-          else
-            this.retrieveById(res.insertId)
-              .then((words) => resolve(words!))
-              .catch(reject);
+          else resolve(res);
         }
       );
     });

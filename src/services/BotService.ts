@@ -40,26 +40,37 @@ export class BotService {
       switch (true) {
         case this.userState[userId] === UserState.WORD_ADDING:
           const [word, translate] = messageText.split('-');
-          const preparedWord = word.trim();
-          const preparedTranslate = translate.trim();
+          const preparedWord = word?.trim().toLowerCase() ?? '';
+          const preparedTranslate = translate?.trim().toLowerCase() ?? '';
           console.log('word: ', preparedWord, ', translate: ', preparedTranslate);
           // далее сохраняем слово в базу данных
-          this.wordsDB.save({
-            word: preparedWord,
-            translate: preparedTranslate,
-            user_id: userId,
-            last_time_to_revise: new Date().toString(),
-            part_of_speech: null,
-            constructor: {
-              name: 'RowDataPacket', // ???
-            },
-          }, userId);
+          if (!preparedWord || !preparedTranslate) {
+            messageData.replyMessage = 'preparedWord or preparedTranslate are undefined';
 
-          this.removeFromUserState(userId);
+            return messageData;
+          }
 
-          // отправляем пользователю сообщение что слово успешно добавлено
-          // и менюшку базовую
-          messageData = this.getStartMenu('Success');
+          try {
+            await this.wordsDB.save({
+              word: preparedWord,
+              translate: preparedTranslate,
+              user_id: userId,
+              last_time_to_revise: new Date().toString(),
+              part_of_speech: null,
+              constructor: {
+                name: 'RowDataPacket', // ???
+              },
+            }, userId);
+
+            // отправляем пользователю сообщение что слово успешно добавлено
+            // и менюшку базовую
+            messageData = this.getStartMenu('Success');
+          } catch (error) {
+            console.log(error);
+            messageData.replyMessage = 'unknown error... please repeat...';
+          } finally {
+            this.removeFromUserState(userId);
+          }
 
           break;
 
