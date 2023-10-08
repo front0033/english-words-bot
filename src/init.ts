@@ -3,9 +3,9 @@ import { Bot } from "grammy";
 import { ChartGPTService } from "./chartGPT/ChartGPTService";
 import { config } from "./config";
 import { firstMenu } from "./bot/ui/menu";
-import { ADD, SEND, STOP, TRANSLATE } from "./bot/actions";
+import { ADD, SEND, STOP, TRANSLATE_BUTTONS } from "./bot/actions";
 import { getFirstMenuMarkup } from "./bot/ui/keyboards/firstMenu";
-import { BotService, MessageEventData } from "./services/BotService";
+import { BotService, MessageEventData, UserState } from "./services/BotService";
 
 const { DEFAULT_INTERVAL_VALUE, TELEGRAM_TOKEN } = config;
 
@@ -54,7 +54,7 @@ bot.hears(/\/stop/, (ctx) => {
 // слушаем когда пользователь нажмет на кнопку добавить
 bot.callbackQuery(ADD, async (ctx) => {
   const messageEventData: MessageEventData = botService.addWordEventHandler();
-  console.log('---- add ---- ');
+  botService.setUserState(ctx.from.id, UserState.WORD_ADDING);
   await ctx.reply(messageEventData.replyMessage || '', {
     entities: ctx.message?.entities,
     ...messageEventData,
@@ -62,27 +62,33 @@ bot.callbackQuery(ADD, async (ctx) => {
  });
 
 // слушаем когда пользователь выберет перевод
-bot.callbackQuery(TRANSLATE, async (ctx) => {
-  if (ctx.message?.text) {
-    const messageEventData: MessageEventData = botService.selectTranslateEvetHandler({
-      messageText: ctx.message.text || null,
-      firstName: ctx.from.first_name,
-    }, ctx.from.id);
+bot.callbackQuery(TRANSLATE_BUTTONS, async (ctx) => {
+  if (TRANSLATE_BUTTONS.includes(ctx.callbackQuery.data)) {
+    const actionName = ctx.callbackQuery.data;
+    // номер кнопки на которую нажали для выбора перевода
+    const index = actionName.charAt(actionName.length - 1);
 
-    await ctx.reply(messageEventData.replyMessage || '', {
-      entities: ctx.message?.entities,
-      parse_mode: messageEventData.parseMode,
-      reply_markup: messageEventData.replyMarkup,
-    });
+    // const messageEventData: MessageEventData = botService.selectTranslateEvetHandler({
+    //   messageText: ctx.message.text || null,
+    //   firstName: ctx.from.first_name,
+    // }, ctx.from.id);
+
+    // await ctx.reply(messageEventData.replyMessage || '', {
+    //   entities: ctx.message?.entities,
+    //   parse_mode: messageEventData.parseMode,
+    //   reply_markup: messageEventData.replyMarkup,
+    // });
   } else {
-    console.log('ranslate: ', ctx.message);
+    console.log('translate ctx: ', JSON.stringify(ctx));
   }
 });
 
 bot.command(['menu', 'start'], async (ctx) => {
-  await ctx.reply(firstMenu, {
-    parse_mode: "HTML",
-    reply_markup: getFirstMenuMarkup(),
+  const messageData = botService.getStartMenu();
+
+  await ctx.reply(messageData.replyMessage || '', {
+    parse_mode: messageData.parseMode,
+    reply_markup: messageData.replyMarkup,
   });
 });
 
@@ -103,7 +109,7 @@ bot.on("message", async (ctx) => {
     messageEventData = await botService.messageEventHandler({
       messageText: ctx.message.text || null,
       firstName: ctx.from.first_name,
-    });
+    }, ctx.from.id);
 
     await ctx.reply(messageEventData.replyMessage || '', {
       entities: ctx.message.entities,

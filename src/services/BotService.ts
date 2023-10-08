@@ -1,9 +1,10 @@
 import { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply, ParseMode } from "grammy/types";
 import { getTranslatetMenuMarkup } from "../bot/ui/keyboards/translateMenu";
-import { translateMenu } from "../bot/ui/menu";
+import { firstMenu, translateMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
 import { Words } from '../db/words';
 import { connection } from "../db/connect";
+import { getFirstMenuMarkup } from "../bot/ui/keyboards/firstMenu";
 
 export interface MessageEventParams {
   messageText: string | null;
@@ -16,32 +17,52 @@ export interface MessageEventData {
   replyMarkup?: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply;
 }
 
+export enum UserState {
+  WORD_ADDING = 'word-adding',
+}
+
 export class BotService {
   private chartGPTServise: ChartGPTService;
   private wordsDB: Words;
-  private translating: boolean = false;
-  private wordToTranslate: string | null = null;
-  private currentTranslate: string | null = null;
-  private sendInterval: any;
+  private userState: Record<number, UserState> = {};
 
   public constructor() {
     this.chartGPTServise = ChartGPTService.ensure();
     this.wordsDB = new Words(connection);
   }
 
-  public async messageEventHandler(data: MessageEventParams): Promise<MessageEventData> {
+  public async messageEventHandler(data: MessageEventParams, userId: number): Promise<MessageEventData> {
     const { messageText, firstName } = data;
 
     let messageData: MessageEventData = {};
 
     if (messageText) {
       switch (true) {
+        case this.userState[userId] === UserState.WORD_ADDING:
+          const [word, translate] = messageText.split('-');
+          const preparedWord = word.trim();
+          const preparedTranslate = translate.trim();
+          console.log('word: ', preparedWord, ', translate: ', preparedTranslate);
+          // далее сохраняем слово в базу данных
+          this.wordsDB.save({
+            word: preparedWord,
+            translate: preparedTranslate,
+            user_id: userId,
+            last_time_to_revise: new Date().toString(),
+            part_of_speech: null,
+            constructor: {
+              name: 'RowDataPacket', // ???
+            },
+          }, userId);
 
-        // когда пользователь ввел слово, и хочет получить варианты переводов
-        case this.translating:
-          messageData = await this.translateWordEventHandler(data);
+          this.removeFromUserState(userId);
+
+          // отправляем пользователю сообщение что слово успешно добавлено
+          // и менюшку базовую
+          messageData = this.getStartMenu('Success');
 
           break;
+
         default:
           messageData.replyMessage = 'Sorry. This bot will work very soon, but now it is at the development stage...';
       }
@@ -50,65 +71,35 @@ export class BotService {
     return messageData;
   }
 
+  public getStartMenu(message?: string) {
+    let messageData: MessageEventData = {
+      replyMessage: message || firstMenu,
+      parseMode: 'HTML',
+      replyMarkup: getFirstMenuMarkup(),
+    };
+
+    return messageData;
+  }
+
+  public setUserState(userId: number, state: UserState) {
+    this.userState = {
+      ...this.userState,
+      [userId]: state,
+    };
+
+    console.log('[setState]: state - ', this.userState);
+  }
+
+  public removeFromUserState(userId: number) {
+    delete this.userState[userId];
+    console.log('[removeFromState]: state - ', this.userState);
+  }
+
   // пользователь нажал на кнопку добавить слово, отправляем ему предложение "давайте добавим новое слово"
   public addWordEventHandler(): MessageEventData  {
     const messageData: MessageEventData = {};
 
-    messageData.replyMessage = 'please write a word...';
-    this.translating = true;
-
-    return messageData;
-  }
-
-  public async translateWordEventHandler(data: MessageEventParams): Promise<MessageEventData>  {
-    const messageData: MessageEventData = {};
-
-    if (!this.translating) {
-      console.log('Trying to translate without word... data: ', data);
-      messageData.replyMessage = 'Please press add button again';
-      return messageData;
-    }
-
-    const { messageText } = data;
-
-    // когда пользователь находится в режиме добавления слова, он должен получить список возможных переводов к слову
-    const translates = await this.chartGPTServise.translateWord(messageText || '');
-    console.log('translates: ', translates);
-    messageData.replyMessage = translateMenu;
-    messageData.parseMode = 'HTML',
-    messageData.replyMarkup = getTranslatetMenuMarkup(translates),
-    this.translating = false;
-    this.wordToTranslate = messageText;
-
-    return messageData;
-  }
-
-  // когда выбрал перевод, и ожидает что слово сохранится с этим переводом
-  public selectTranslateEvetHandler(data: MessageEventParams, userId: number): MessageEventData  {
-    const { messageText, firstName } = data;
-    const messageData: MessageEventData = {};
-
-    if (!!this.wordToTranslate) {
-      this.currentTranslate = messageText;
-      console.log('this.currentTranslate: ', this.currentTranslate);
-
-      // далее сохраняем слово в базу данных
-      this.wordsDB.save({
-        word: this.wordToTranslate,
-        translate: this.currentTranslate,
-        user_id: userId,
-        last_time_to_revise: new Date().toString(),
-        part_of_speech: null,
-        constructor: {
-          name: 'RowDataPacket', // ???
-        },
-      }, userId)
-
-      this.translating = false;
-      this.wordToTranslate = null;
-      this.currentTranslate = null;
-    }
-
+    messageData.replyMessage = 'Please write a word and translate. Example: "Forthight - две недели" ';
     return messageData;
   }
 }

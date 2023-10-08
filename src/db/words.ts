@@ -39,8 +39,8 @@ export class Words {
   public save(word: Word, userId: number) {
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
-        `INSERT INTO ${WORDS_TABLE_NAME} (user_id, word, resolve, last_time_to_revise, translate) VALUES(?,?,?,?,?)`,
-        [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null],
+        `INSERT INTO ${WORDS_TABLE_NAME} (user_id, word, resolve, last_time_to_revise, translate, part_of_speech) VALUES(?,?,?,?,?,?)`,
+        [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null, word.part_of_speech || null],
         (err, res) => {
           if (err) reject(`${WORDS_TABLE_NAME} save ERROR: ${JSON.stringify(err, null, 4)}`);
           else
@@ -55,8 +55,8 @@ export class Words {
   public update(word: Word, userId: number): Promise<number> {
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
-        `UPDATE ${WORDS_TABLE_NAME} SET user_id = ?, word = ?, resolve = ?, last_time_to_revise = ?, translate = ? WHERE id = ?`,
-        [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null],
+        `UPDATE ${WORDS_TABLE_NAME} SET user_id = ?, word = ?, resolve = ?, last_time_to_revise = ?, translate = ?, part_of_speech = ?  WHERE id = ?`,
+        [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null, word.part_of_speech || null],
         (err, res) => {
           if (err) reject(err);
           else resolve(res.affectedRows);
