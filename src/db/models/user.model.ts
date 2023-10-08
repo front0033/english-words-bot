@@ -8,4 +8,5 @@ export default interface User extends RowDataPacket {
    */
   rating: null | number;
   last_usage_data: null | string; // datetime
+  subscribed: null | number;
 }

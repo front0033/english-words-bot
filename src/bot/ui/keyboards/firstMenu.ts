@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import { ADD, SEND, STOP } from "../../actions";
+import { ADD, SUBSCRIBE, UNSUBSCRIBE } from "../../actions";
 import { addWordButton, startLearningAddedWordsButton, stopLearningAddedWordsButton } from "../buttons";
 
 //Build keyboard
@@ -7,8 +7,8 @@ import { addWordButton, startLearningAddedWordsButton, stopLearningAddedWordsBut
 export function getFirstMenuMarkup() {
   const firstMenuMarkup = new InlineKeyboard()
     .text(addWordButton, ADD)
-    .text(startLearningAddedWordsButton, SEND)
-    .text(stopLearningAddedWordsButton, STOP);
+    .text(startLearningAddedWordsButton, SUBSCRIBE)
+    .text(stopLearningAddedWordsButton, UNSUBSCRIBE);
 
   return firstMenuMarkup;
 }

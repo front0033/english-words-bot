@@ -6,7 +6,7 @@ import User from "./models/user.model";
 export class Users {
   private connection: Connection;
 
-  private constructor(connection: Connection) {
+  public constructor(connection: Connection) {
     this.connection = connection;
   }
 
@@ -26,14 +26,12 @@ export class Users {
   public save(user: User) {
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
-        `INSERT INTO ${USERS_TABLE_NAME} (id, name, rating, last_usage_data) VALUES(?,?,?,?)`,
-        [user.id, user.name, user.rating || DEFAULT_RATING, user.last_usage_data || null],
+        `INSERT INTO ${USERS_TABLE_NAME} (id, name, rating, last_usage_data) VALUES(?,?,?,?,?)`,
+        [user.id, user.name, user.rating || DEFAULT_RATING, user.last_usage_data || null, user.subscribed || null],
         (err, res) => {
           if (err) reject(`${USERS_TABLE_NAME} save ERROR: ${JSON.stringify(err, null, 4)}`);
           else
-            this.retrieveById(res.insertId)
-              .then((user) => resolve(user!))
-              .catch(reject);
+            resolve(user!)
         }
       );
     });
@@ -42,8 +40,8 @@ export class Users {
   public update(user: User): Promise<number> {
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
-        `UPDATE ${USERS_TABLE_NAME} SET name = ?, rating = ?, last_usage_data = ? WHERE id = ?`,
-        [user.name, user.rating || DEFAULT_RATING, user.last_usage_data, user.id],
+        `UPDATE ${USERS_TABLE_NAME} SET name = ?, rating = ?, last_usage_data = ?, subscribed = ? WHERE id = ?`,
+        [user.name, user.rating || DEFAULT_RATING, user.last_usage_data, user.id, user.subscribed],
         (err, res) => {
           if (err) reject(err);
           else resolve(res.affectedRows);

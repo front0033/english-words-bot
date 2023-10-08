@@ -23,6 +23,19 @@ export class Words {
     });
   }
 
+  public getRandomWordByUserId(userId: number): Promise<Word> {
+    return new Promise((resolve, reject) => {
+      this.connection.query<Word[]>(
+      `SELECT row FROM ${WORDS_TABLE_NAME} ORDER BY RAND() LIMIT 1`, // TODO: нифига не работает, пофиксить
+      [userId],
+      (err, res) => {
+        if (err) reject(`${WORDS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
+        else resolve(res?.[0]);
+      }
+    );
+    });
+  }
+
   public save(word: Word, userId: number) {
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(

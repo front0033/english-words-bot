@@ -1,10 +1,12 @@
 import { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply, ParseMode } from "grammy/types";
-import { getTranslatetMenuMarkup } from "../bot/ui/keyboards/translateMenu";
-import { firstMenu, translateMenu } from "../bot/ui/menu";
+import { firstMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
-import { Words } from '../db/words';
 import { connection } from "../db/connect";
+import { Words } from '../db/words';
+import { Users } from "../db/users";
 import { getFirstMenuMarkup } from "../bot/ui/keyboards/firstMenu";
+import User from "../db/models/user.model";
+
 
 export interface MessageEventParams {
   messageText: string | null;
@@ -19,21 +21,72 @@ export interface MessageEventData {
 
 export enum UserState {
   WORD_ADDING = 'word-adding',
-  STUDING = 'studing',
+  STUDING = 'studing', // пока нигде не используется, подумать, нужно ли вообще
 }
 
 export class BotService {
   private chartGPTServise: ChartGPTService;
+  private usersDB: Users;
   private wordsDB: Words;
   private userState: Record<number, UserState> = {};
 
   public constructor() {
     this.chartGPTServise = ChartGPTService.ensure();
+    this.usersDB = new Users(connection);
     this.wordsDB = new Words(connection);
   }
 
+  public async checkUser(userId: number) {
+    await this.usersDB.retrieveById(userId);
+  }
+
+  public async setUser(userId: number, name: string) {
+    await this.usersDB.save({
+      id: userId,
+      name,
+      last_usage_data: null,
+      rating: null,
+      subscribed: null,
+      constructor: {
+        name: 'RowDataPacket',
+      }
+    });
+  }
+
+  // пишем что юзер подписан или не подписан на отправку сообщений в базу
+  public async updateUser(userId: number, name: string, subscribed: number | null) {
+    await this.usersDB.update({
+      id: userId,
+      name,
+      last_usage_data: null,
+      rating: null,
+      subscribed: subscribed,
+      constructor: {
+        name: 'RowDataPacket',
+      }
+    });
+  }
+
+  public async getRandomWordByUserId(userId: number) {
+    const result = await this.wordsDB.getRandomWordByUserId(userId);
+
+    return result.word;
+  }
+
+  public async getRandomTextByUserId(userId: number): Promise<MessageEventData> {
+    const word = await this.getRandomWordByUserId(userId);
+    const text = await this.chartGPTServise.randomSentenceWithWord(word);
+    const preparedText = text?.replace(word, `<b>${word}</b>`) ?? '';
+
+    const messageData: MessageEventData = {
+      replyMessage: preparedText,
+    };
+
+    return messageData;
+  }
+
   public async messageEventHandler(data: MessageEventParams, userId: number): Promise<MessageEventData> {
-    const { messageText, firstName } = data;
+    const { messageText } = data;
 
     let messageData: MessageEventData = {};
 

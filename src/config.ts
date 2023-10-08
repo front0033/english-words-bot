@@ -22,7 +22,7 @@ export const config: Config = {
   MYSQL_DATABASE_USER: process.env.MYSQL_DATABASE_USER,
   MYSQL_DATABASE_PASSWORD: process.env.MYSQL_DATABASE_PASSWORD,
   OPENAI_API_MODEL: process.env.OPENAI_API_MODEL as GPTModelType || 'gpt-3.5-turbo',
-  DEFAULT_INTERVAL_VALUE: Number(process.env.DEFAULT_INTERVAL_VALUE) || 10000,
+  DEFAULT_INTERVAL_VALUE: Number(process.env.DEFAULT_INTERVAL_VALUE) || 5000,
 };
 
 Object.keys(config)
