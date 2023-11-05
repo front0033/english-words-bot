@@ -1,9 +1,9 @@
 import { Bot } from "grammy";
 
-import { ChartGPTService } from "./chartGPT/ChartGPTService";
 import { config } from "./config";
 import { ADD, SUBSCRIBE, UNSUBSCRIBE } from "./bot/actions";
 import { BotService, MessageEventData, UserState } from "./services/BotService";
+import cron from 'node-cron';
 
 //Create a new bot
 const bot = new Bot(String(config.TELEGRAM_TOKEN));
@@ -14,6 +14,18 @@ let sendInterval: any; // TODO: записать состояние для ка�
 // начало работы с ботом, показываем юзеру базовое меню
 bot.command(['menu', 'start'], async (ctx) => {
   const messageData = botService.getStartMenu();
+
+  const id = ctx.from?.id;
+
+  const first_name = ctx.from?.first_name;
+
+  if (!id || !first_name) {
+    return;
+  }
+
+  // по умолчанию подписываем юзера
+  const subscribed = 1;
+  botService.ensureUser(id, first_name, subscribed);
 
   await ctx.reply(messageData.replyMessage || '', {
     parse_mode: messageData.parseMode,
@@ -93,7 +105,18 @@ const stopSending = () => {
 bot.callbackQuery([UNSUBSCRIBE, /\/stop/], async (ctx) => {
   stopSending();
   ctx.reply('stopping!');
-})
+});
+
+cron.schedule('*/5 * * * *', async () => {
+  const wordsDataItems = await botService.selectByTopUsers(config.DEFAULT_USERS_AMOUNT);
+
+  if (wordsDataItems.length) {
+    console.log('[schedule]: wordsDataItems - ', wordsDataItems);
+    botService.sendMessages(wordsDataItems, bot.api.sendMessage);
+  } else {
+    console.log('[schedule]: wordsDataItems is empty...');
+  }
+});
 
 //Start the Bot
 bot.start();

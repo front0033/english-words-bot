@@ -10,8 +10,8 @@ interface Config {
   MYSQL_DATABASE_PASSWORD?: string;
   OPENAI_API_MODEL: GPTModelType;
   DEFAULT_INTERVAL_VALUE: number;
+  DEFAULT_USERS_AMOUNT: number;
 }
-
 
 export const config: Config = {
   TELEGRAM_TOKEN: process.env.TELEGRAM_TOKEN,
@@ -23,6 +23,7 @@ export const config: Config = {
   MYSQL_DATABASE_PASSWORD: process.env.MYSQL_DATABASE_PASSWORD,
   OPENAI_API_MODEL: process.env.OPENAI_API_MODEL as GPTModelType || 'gpt-3.5-turbo',
   DEFAULT_INTERVAL_VALUE: Number(process.env.DEFAULT_INTERVAL_VALUE) || 5000,
+  DEFAULT_USERS_AMOUNT: Number(process.env.DEFAULT_USERS_AMOUNT) || 100,
 };
 
 Object.keys(config)

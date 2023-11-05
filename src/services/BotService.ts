@@ -1,12 +1,11 @@
-import { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply, ParseMode } from "grammy/types";
+import Bot, { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply, ParseMode } from "grammy/types";
 import { firstMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
 import { connection } from "../db/connect";
-import { Words } from '../db/words';
+import { WordWithUserId, Words } from '../db/words';
 import { Users } from "../db/users";
 import { getFirstMenuMarkup } from "../bot/ui/keyboards/firstMenu";
 import User from "../db/models/user.model";
-
 
 export interface MessageEventParams {
   messageText: string | null;
@@ -54,8 +53,8 @@ export class BotService {
   }
 
   // пишем что юзер подписан или не подписан на отправку сообщений в базу
-  public async updateUser(userId: number, name: string, subscribed: number | null) {
-    await this.usersDB.update({
+  public async ensureUser(userId: number, name: string, subscribed: number | null) {
+    const user: User = {
       id: userId,
       name,
       last_usage_data: null,
@@ -64,7 +63,21 @@ export class BotService {
       constructor: {
         name: 'RowDataPacket',
       }
-    });
+    };
+
+    try {
+      const res = await this.usersDB.retrieveById(userId);
+      console.log('[ensureUser]: res - ', res);
+
+      if (!res) {
+        await this.usersDB.save(user);
+      } else {
+        await this.usersDB.update(user)
+      }
+    } catch (error) {
+      console.log('[ensureUser]: error - ', error);
+    }
+
   }
 
   public async getRandomWordByUserId(userId: number) {
@@ -73,9 +86,10 @@ export class BotService {
     return result.word;
   }
 
+  // ? удалить так как есть новый запрос в базу который уже забирает слова по топ юзерам
   public async getRandomTextByUserId(userId: number): Promise<MessageEventData> {
     const word = await this.getRandomWordByUserId(userId);
-    const text = await this.chartGPTServise.randomSentenceWithWord(word);
+    const text = await this.randomSentenceWithWord(word);
     const preparedText = text?.replace(word, `<b>${word}</b>`) ?? '';
 
     const messageData: MessageEventData = {
@@ -83,6 +97,12 @@ export class BotService {
     };
 
     return messageData;
+  }
+
+  public async randomSentenceWithWord(word: string) {
+    const text = await this.chartGPTServise.randomSentenceWithWord(word);
+
+    return text;
   }
 
   public async messageEventHandler(data: MessageEventParams, userId: number): Promise<MessageEventData> {
@@ -166,5 +186,19 @@ export class BotService {
 
     messageData.replyMessage = 'Please write a word and translate. Example: "Forthight - две недели" ';
     return messageData;
+  }
+
+  public selectByTopUsers(amountOfUsers: number) {
+    return this.wordsDB.selectByTopUsers(amountOfUsers);
+  }
+
+  public async sendMessages(items: WordWithUserId[], sendMessage: (userId: number, text: string) => void) {
+    const [{ userId, word }, ...rest] = items;
+
+    await sendMessage(userId, word);
+
+    if (rest.length) {
+      this.sendMessages(rest, sendMessage);
+    }
   }
 }

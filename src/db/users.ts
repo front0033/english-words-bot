@@ -11,6 +11,7 @@ export class Users {
   }
 
   public retrieveById(userId: number): Promise<User> {
+    console.log('[Users]: retrieveById - ', userId);
     return new Promise((resolve, reject) => {
       this.connection.query<User[]>(
       `SELECT * FROM ${USERS_TABLE_NAME} WHERE id = ?`,
@@ -24,9 +25,10 @@ export class Users {
   }
 
   public save(user: User) {
+    console.log('[Users]: save - ', user);
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
-        `INSERT INTO ${USERS_TABLE_NAME} (id, name, rating, last_usage_data) VALUES(?,?,?,?,?)`,
+        `INSERT INTO ${USERS_TABLE_NAME} (id, name, rating, last_usage_data, subscribed) VALUES(?,?,?,?,?)`,
         [user.id, user.name, user.rating || DEFAULT_RATING, user.last_usage_data || null, user.subscribed || null],
         (err, res) => {
           if (err) reject(`${USERS_TABLE_NAME} save ERROR: ${JSON.stringify(err, null, 4)}`);
@@ -38,10 +40,11 @@ export class Users {
   }
 
   public update(user: User): Promise<number> {
+    console.log('[Users]: update - ', user);
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
         `UPDATE ${USERS_TABLE_NAME} SET name = ?, rating = ?, last_usage_data = ?, subscribed = ? WHERE id = ?`,
-        [user.name, user.rating || DEFAULT_RATING, user.last_usage_data, user.id, user.subscribed],
+        [user.name, user.rating || DEFAULT_RATING, user.last_usage_data, user.subscribed, user.id],
         (err, res) => {
           if (err) reject(err);
           else resolve(res.affectedRows);

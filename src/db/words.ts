@@ -1,7 +1,14 @@
 import { Connection, ResultSetHeader } from "mysql2";
 
-import { DEFAULT_RESOLVE, WORDS_TABLE_NAME } from './constants';
+import { DEFAULT_RESOLVE, USERS_TABLE_NAME, WORDS_TABLE_NAME } from './constants';
 import Word from "./models/word.model";
+import { RowDataPacket } from "mysql2";
+
+export interface WordWithUserId extends RowDataPacket {
+  user_id: number;
+   word: string;
+   translate: string;
+}
 
 export class Words {
   private connection: Connection;
@@ -13,11 +20,26 @@ export class Words {
   public retrieveByUserId(userId: number): Promise<Word> {
     return new Promise((resolve, reject) => {
       this.connection.query<Word[]>(
-      `SELECT * FROM ${WORDS_TABLE_NAME} WHERE user_id = ?`,
-      [userId],
+        `SELECT * FROM ${WORDS_TABLE_NAME} WHERE user_id = ?`,
+        [userId],
+        (err, res) => {
+          if (err) reject(`${WORDS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
+          else resolve(res?.[0]);
+        }
+      );
+    });
+  }
+
+  public selectByTopUsers(amountOfUser: number): Promise<WordWithUserId[]> {
+    return new Promise((resolve, reject) => {
+      this.connection.query<WordWithUserId[]>( // написать вложенный запрос
+      `SELECT TOP ? user_id, word, translate
+        FROM ${USERS_TABLE_NAME} INNER JOIN ${WORDS_TABLE_NAME}
+        ON ${USERS_TABLE_NAME}.id = ${WORDS_TABLE_NAME}.user_id subscribed = true;`,
+      [amountOfUser],
       (err, res) => {
-        if (err) reject(`${WORDS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
-        else resolve(res?.[0]);
+        if (err) reject(`${USERS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
+        else resolve(res);
       }
     );
     });
