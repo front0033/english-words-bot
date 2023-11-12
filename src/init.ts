@@ -9,7 +9,7 @@ import cron from 'node-cron';
 const bot = new Bot(String(config.TELEGRAM_TOKEN));
 const botService = new BotService();
 
-const sendMessage = (chatId: number, text: string) => {
+const apiSendMessage = (chatId: number, text: string) => {
   bot.api.sendMessage(chatId, text);
 }
 
@@ -111,12 +111,13 @@ bot.callbackQuery([UNSUBSCRIBE, /\/stop/], async (ctx) => {
   ctx.reply('stopping!');
 });
 
-cron.schedule('*/5 * * * *', async () => {
+cron.schedule('*/2 * * * *', async () => {
+  console.log('[schedule]: started...');
   const wordsDataItems = await botService.selectByTopUsers(config.DEFAULT_USERS_AMOUNT);
 
   if (wordsDataItems.length) {
     console.log('[schedule]: wordsDataItems - ', wordsDataItems);
-    botService.sendMessages(wordsDataItems, sendMessage);
+    botService.sendMessages(wordsDataItems, apiSendMessage);
   } else {
     console.log('[schedule]: wordsDataItems is empty...');
   }

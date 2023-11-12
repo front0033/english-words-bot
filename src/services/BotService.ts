@@ -103,7 +103,7 @@ export class BotService {
 
   public async randomSentenceWithWord(word: string) {
     const text = await this.chartGPTServise.randomSentenceWithWord(word);
-
+    console.log('[randomSentenceWithWord]: text - ', text);
     return text;
   }
 
@@ -195,9 +195,14 @@ export class BotService {
   }
 
   public async sendMessages(items: WordWithUserId[], sendMessage: (userId: number, text: string) => void) {
-    const [{ userId, word }, ...rest] = items;
+    const [{ userId, word, translate }, ...rest] = items;
 
-    await sendMessage(userId, word);
+    const text = await this.randomSentenceWithWord(word);
+    const formattedText = text?.replace(word, `<b>${word}</b>`) || '';
+    const translateText = ` (<b>${word}</b>: ${translate}).`;
+    const message = `${formattedText} ${translateText}`;
+
+    await sendMessage(userId, message);
 
     if (rest.length) {
       this.sendMessages(rest, sendMessage);

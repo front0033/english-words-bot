@@ -34,16 +34,28 @@ export class WordDB {
   public selectByTopUsers(amountOfUser: number): Promise<WordWithUserId[]> {
     return new Promise((resolve, reject) => {
       /**
-       * SELECT  id, word, translate
-        FROM users INNER JOIN words
-        ON users.id = words.user_id AND subscribed = 1
-        ORDER BY RAND()
-         LIMIT 1;
+       * SELECT u.id AS user_id, w.word, w.translate
+          FROM user u
+          JOIN (
+              SELECT user_id, word, translate
+              FROM word
+              ORDER BY RAND()
+              LIMIT 1
+          ) w ON u.id = w.user_id
+          WHERE u.subscribed = 1
+          LIMIT 10;
        */
       this.connection.query<WordWithUserId[]>( // написать вложенный запрос
-      `SELECT id AS userId, chat_id AS chatId, word, translate
-        FROM ${USERS_TABLE_NAME} INNER JOIN ${WORDS_TABLE_NAME}
-        ON ${USERS_TABLE_NAME}.id = ${WORDS_TABLE_NAME}.user_id AND subscribed = true ORDER BY RAND() LIMIT 1`,
+      `SELECT u.id AS userId, u.chat_id AS chatId, w.word, w.translate
+        FROM ${USERS_TABLE_NAME} u
+        JOIN (
+          SELECT user_id, word, translate
+          FROM word
+          ORDER BY RAND()
+          LIMIT 1
+      ) w ON u.id = w.user_id
+      WHERE u.subscribed = 1
+      LIMIT ?`,
       [amountOfUser],
       (err, res) => {
         if (err) reject(`${USERS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
