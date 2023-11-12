@@ -5,9 +5,10 @@ import Word from "./models/word.model";
 import { RowDataPacket } from "mysql2";
 
 export interface WordWithUserId extends RowDataPacket {
-  user_id: number;
-   word: string;
-   translate: string;
+  userId: number;
+  chartId: number
+  word: string;
+  translate: string;
 }
 
 export class WordDB {
@@ -40,7 +41,7 @@ export class WordDB {
          LIMIT 1;
        */
       this.connection.query<WordWithUserId[]>( // написать вложенный запрос
-      `SELECT id, word, translate
+      `SELECT id AS userId, chat_id AS chatId, word, translate
         FROM ${USERS_TABLE_NAME} INNER JOIN ${WORDS_TABLE_NAME}
         ON ${USERS_TABLE_NAME}.id = ${WORDS_TABLE_NAME}.user_id AND subscribed = true ORDER BY RAND() LIMIT 1`,
       [amountOfUser],

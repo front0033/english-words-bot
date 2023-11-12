@@ -39,9 +39,10 @@ export class BotService {
     await this.usersDB.retrieveById(userId);
   }
 
-  public async setUser(userId: number, name: string) {
+  public async setUser(userId: number, name: string, chatId: number) {
     await this.usersDB.save({
       id: userId,
+      chat_id: chatId,
       name,
       last_usage_data: null,
       rating: null,
@@ -53,9 +54,10 @@ export class BotService {
   }
 
   // пишем что юзер подписан или не подписан на отправку сообщений в базу
-  public async ensureUser(userId: number, name: string, subscribed: number | null) {
+  public async ensureUser(userId: number, name: string, chatId: number, subscribed: number | null) {
     const user: User = {
       id: userId,
+      chat_id: chatId,
       name,
       last_usage_data: null,
       rating: null,

@@ -9,13 +9,17 @@ import cron from 'node-cron';
 const bot = new Bot(String(config.TELEGRAM_TOKEN));
 const botService = new BotService();
 
+const sendMessage = (chatId: number, text: string) => {
+  bot.api.sendMessage(chatId, text);
+}
+
 let sendInterval: any; // TODO: записать состояние для кажддого юзера в базу: подписан от на сообщения от бота или нет
 
 // начало работы с ботом, показываем юзеру базовое меню
 bot.command(['menu', 'start'], async (ctx) => {
   const messageData = botService.getStartMenu();
-
   const id = ctx.from?.id;
+  const chatId = ctx.chat.id;
 
   const first_name = ctx.from?.first_name;
 
@@ -25,7 +29,7 @@ bot.command(['menu', 'start'], async (ctx) => {
 
   // по умолчанию подписываем юзера
   const subscribed = 1;
-  botService.ensureUser(id, first_name, subscribed);
+  botService.ensureUser(id, first_name, chatId, subscribed);
 
   await ctx.reply(messageData.replyMessage || '', {
     parse_mode: messageData.parseMode,
@@ -112,7 +116,7 @@ cron.schedule('*/5 * * * *', async () => {
 
   if (wordsDataItems.length) {
     console.log('[schedule]: wordsDataItems - ', wordsDataItems);
-    botService.sendMessages(wordsDataItems, bot.api.sendMessage.bind(bot));
+    botService.sendMessages(wordsDataItems, sendMessage);
   } else {
     console.log('[schedule]: wordsDataItems is empty...');
   }
