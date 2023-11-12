@@ -1,5 +1,5 @@
-export const USERS_TABLE_NAME = 'users';
-export const WORDS_TABLE_NAME = 'words';
+export const USERS_TABLE_NAME = 'user';
+export const WORDS_TABLE_NAME = 'word';
 
 export const DEFAULT_RESOLVE = 0;
 export const FINISH_RESOLVE = 1;

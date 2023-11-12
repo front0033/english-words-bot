@@ -10,7 +10,7 @@ export interface WordWithUserId extends RowDataPacket {
    translate: string;
 }
 
-export class Words {
+export class WordDB {
   private connection: Connection;
 
   public constructor(connection: Connection) {

@@ -2,8 +2,8 @@ import Bot, { InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, Fo
 import { firstMenu } from "../bot/ui/menu";
 import { ChartGPTService } from "../chartGPT/ChartGPTService";
 import { connection } from "../db/connect";
-import { WordWithUserId, Words } from '../db/words';
-import { Users } from "../db/users";
+import { WordWithUserId, WordDB } from '../db/word';
+import { UserDB } from "../db/user";
 import { getFirstMenuMarkup } from "../bot/ui/keyboards/firstMenu";
 import User from "../db/models/user.model";
 
@@ -25,14 +25,14 @@ export enum UserState {
 
 export class BotService {
   private chartGPTServise: ChartGPTService;
-  private usersDB: Users;
-  private wordsDB: Words;
+  private usersDB: UserDB;
+  private wordsDB: WordDB;
   private userState: Record<number, UserState> = {};
 
   public constructor() {
     this.chartGPTServise = ChartGPTService.ensure();
-    this.usersDB = new Users(connection);
-    this.wordsDB = new Words(connection);
+    this.usersDB = new UserDB(connection);
+    this.wordsDB = new WordDB(connection);
   }
 
   public async checkUser(userId: number) {

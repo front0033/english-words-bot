@@ -3,7 +3,7 @@ import { Connection, ResultSetHeader } from "mysql2";
 import { DEFAULT_RATING, USERS_TABLE_NAME } from './constants';
 import User from "./models/user.model";
 
-export class Users {
+export class UserDB {
   private connection: Connection;
 
   public constructor(connection: Connection) {
@@ -11,7 +11,7 @@ export class Users {
   }
 
   public retrieveById(userId: number): Promise<User> {
-    console.log('[Users]: retrieveById - ', userId);
+    console.log('[User]: retrieveById - ', userId);
     return new Promise((resolve, reject) => {
       this.connection.query<User[]>(
       `SELECT * FROM ${USERS_TABLE_NAME} WHERE id = ?`,
@@ -25,7 +25,7 @@ export class Users {
   }
 
   public save(user: User) {
-    console.log('[Users]: save - ', user);
+    console.log('[User]: save - ', user);
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
         `INSERT INTO ${USERS_TABLE_NAME} (id, name, rating, last_usage_data, subscribed) VALUES(?,?,?,?,?)`,
@@ -41,7 +41,7 @@ export class Users {
 
   public update(user: User): Promise<number> {
     // TODO: need to fix https://stackoverflow.com/questions/45664388/error-1031-hy000-at-line-table-storage-engine-for-table-name-doesnt
-    console.log('[Users]: update - ', user);
+    console.log('[User]: update - ', user);
     return new Promise((resolve, reject) => {
       this.connection.query<ResultSetHeader>(
         `UPDATE ${USERS_TABLE_NAME} SET subscribed = ? WHERE id = ?`,
