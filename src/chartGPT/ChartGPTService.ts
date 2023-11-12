@@ -33,12 +33,8 @@ export class ChartGPTService {
     return choices;
   }
 
-  public async randomQuestion(): Promise<string | null> {
-    return this.askAIByWord('say random question by English', '');
-  }
-
   public async randomQuestionWithWord(word: string): Promise<string | null> {
-    const text = await this.askAIByWord(`say random question by English ${word}`, '');
+    const text = await this.askAIByWord(`text random question with word "${word}" by English`, '');
     return text?.replace(word, `<b>${word}</b>`) ?? null;
   }
 

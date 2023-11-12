@@ -33,19 +33,7 @@ export class WordDB {
 
   public selectByTopUsers(amountOfUser: number): Promise<WordWithUserId[]> {
     return new Promise((resolve, reject) => {
-      /**
-       * SELECT u.id AS user_id, w.word, w.translate
-          FROM user u
-          JOIN (
-              SELECT user_id, word, translate
-              FROM word
-              ORDER BY RAND()
-              LIMIT 1
-          ) w ON u.id = w.user_id
-          WHERE u.subscribed = 1
-          LIMIT 10;
-       */
-      this.connection.query<WordWithUserId[]>( // написать вложенный запрос
+      this.connection.query<WordWithUserId[]>(
       `SELECT u.id AS userId, u.chat_id AS chatId, w.word, w.translate
         FROM ${USERS_TABLE_NAME} u
         JOIN (
@@ -58,21 +46,25 @@ export class WordDB {
       LIMIT ?`,
       [amountOfUser],
       (err, res) => {
-        if (err) reject(`${USERS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
+        if (err) reject(`${USERS_TABLE_NAME} selectByTopUsers ERROR: ${JSON.stringify(err, null, 4)}`);
         else resolve(res);
       }
     );
     });
   }
 
-  public getRandomWordByUserId(userId: number): Promise<Word> {
+  public selectRandowWordByIserId(userId: number): Promise<WordWithUserId[]> {
     return new Promise((resolve, reject) => {
-      this.connection.query<Word[]>(
-      `SELECT row FROM ${WORDS_TABLE_NAME} ORDER BY RAND() LIMIT 1`, // TODO: нифига не работает, пофиксить
+      this.connection.query<WordWithUserId[]>(
+      `SELECT user_id, word, translate
+        FROM word
+        WHERE user_id = ?
+        ORDER BY RAND()
+        LIMIT 1`,
       [userId],
       (err, res) => {
-        if (err) reject(`${WORDS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
-        else resolve(res?.[0]);
+        if (err) reject(`${USERS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
+        else resolve(res);
       }
     );
     });
@@ -97,7 +89,7 @@ export class WordDB {
         `UPDATE ${WORDS_TABLE_NAME} SET user_id = ?, word = ?, resolve = ?, last_time_to_revise = ?, translate = ?, part_of_speech = ?  WHERE id = ?`,
         [userId, word.word, word.resolve || DEFAULT_RESOLVE, word.last_time_to_revise || null, word.translate || null, word.part_of_speech || null],
         (err, res) => {
-          if (err) reject(err);
+          if (err) reject(`${WORDS_TABLE_NAME} update ERROR: ${JSON.stringify(err, null, 4)}`);
           else resolve(res.affectedRows);
         }
       );

@@ -18,6 +18,7 @@ export interface MessageEventData {
   replyMarkup?: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply;
 }
 
+// унести состояние в базу
 export enum UserState {
   WORD_ADDING = 'word-adding',
   STUDING = 'studing', // пока нигде не используется, подумать, нужно ли вообще
@@ -79,26 +80,6 @@ export class BotService {
     } catch (error) {
       console.log('[ensureUser]: error - ', error);
     }
-
-  }
-
-  public async getRandomWordByUserId(userId: number) {
-    const result = await this.wordsDB.getRandomWordByUserId(userId);
-
-    return result.word;
-  }
-
-  // ? удалить так как есть новый запрос в базу который уже забирает слова по топ юзерам
-  public async getRandomTextByUserId(userId: number): Promise<MessageEventData> {
-    const word = await this.getRandomWordByUserId(userId);
-    const text = await this.randomSentenceWithWord(word);
-    const preparedText = text?.replace(word, `<b>${word}</b>`) ?? '';
-
-    const messageData: MessageEventData = {
-      replyMessage: preparedText,
-    };
-
-    return messageData;
   }
 
   public async randomSentenceWithWord(word: string) {
@@ -168,6 +149,7 @@ export class BotService {
     return messageData;
   }
 
+  // унести состояние в базу
   public setUserState(userId: number, state: UserState) {
     this.userState = {
       ...this.userState,
@@ -194,18 +176,43 @@ export class BotService {
     return this.wordsDB.selectByTopUsers(amountOfUsers);
   }
 
-  public async sendMessages(items: WordWithUserId[], sendMessage: (userId: number, text: string) => void) {
-    const [{ userId, word, translate }, ...rest] = items;
 
+  public async findWordByUserId(userId: number): Promise<WordWithUserId[]> {
+    const result = await this.wordsDB.selectRandowWordByIserId(userId);
+
+    return result;
+  }
+
+  public async makeMessage(data: Omit<WordWithUserId, 'chatId'>): Promise<string> {
+    const { word, translate } = data;
     const text = await this.randomSentenceWithWord(word);
     const formattedText = text?.replace(word, `<b>${word}</b>`) || '';
     const translateText = ` (<b>${word}</b>: ${translate}).`;
     const message = `${formattedText} ${translateText}`;
-    console.log('[sendMessages] message ', message);
+
+    return message;
+  }
+
+
+  public async sendMessages(items: WordWithUserId[], sendMessage: (userId: number, text: string) => void) {
+    const [{ userId, word, translate }, ...rest] = items;
+
+    const message = await this.makeMessage({ userId, word, translate });
+
     await sendMessage(userId, message);
 
     if (rest.length) {
       this.sendMessages(rest, sendMessage);
     }
+  }
+
+  public async getUsersCount(): Promise<MessageEventData>  {
+    const messageData: MessageEventData = {};
+
+    const [countData] = await this.usersDB.getSubscribedUsersCount();
+
+
+    messageData.replyMessage = `Bot has ${countData.fieldCount} active users`;
+    return messageData;
   }
 }
