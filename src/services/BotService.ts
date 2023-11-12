@@ -132,7 +132,9 @@ export class BotService {
           break;
 
         default:
-          messageData.replyMessage = 'Sorry. This bot will work very soon, but now it is at the development stage...';
+          messageData.replyMessage = 'If you want to add word - please press button "Add word". If you warn to start learning - please press "Start learning". If you want to see menu - please write /menu or /start';
+          messageData.parseMode = 'HTML';
+          messageData.replyMarkup = getFirstMenuMarkup();
       }
     }
 
