@@ -112,7 +112,7 @@ cron.schedule('*/5 * * * *', async () => {
 
   if (wordsDataItems.length) {
     console.log('[schedule]: wordsDataItems - ', wordsDataItems);
-    botService.sendMessages(wordsDataItems, bot.api.sendMessage);
+    botService.sendMessages(wordsDataItems, bot.api.sendMessage.bind(bot));
   } else {
     console.log('[schedule]: wordsDataItems is empty...');
   }

@@ -32,10 +32,17 @@ export class Words {
 
   public selectByTopUsers(amountOfUser: number): Promise<WordWithUserId[]> {
     return new Promise((resolve, reject) => {
+      /**
+       * SELECT  id, word, translate
+        FROM users INNER JOIN words
+        ON users.id = words.user_id AND subscribed = 1
+        ORDER BY RAND()
+         LIMIT 1;
+       */
       this.connection.query<WordWithUserId[]>( // написать вложенный запрос
-      `SELECT TOP ? user_id, word, translate
+      `SELECT id, word, translate
         FROM ${USERS_TABLE_NAME} INNER JOIN ${WORDS_TABLE_NAME}
-        ON ${USERS_TABLE_NAME}.id = ${WORDS_TABLE_NAME}.user_id subscribed = true;`,
+        ON ${USERS_TABLE_NAME}.id = ${WORDS_TABLE_NAME}.user_id AND subscribed = true ORDER BY RAND() LIMIT 1`,
       [amountOfUser],
       (err, res) => {
         if (err) reject(`${USERS_TABLE_NAME} retrieveById ERROR: ${JSON.stringify(err, null, 4)}`);
