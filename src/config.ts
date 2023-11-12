@@ -11,6 +11,7 @@ interface Config {
   OPENAI_API_MODEL: GPTModelType;
   DEFAULT_INTERVAL_VALUE: number;
   DEFAULT_USERS_AMOUNT: number;
+  CRON_MINUTES: number;
 }
 
 export const config: Config = {
@@ -24,6 +25,7 @@ export const config: Config = {
   OPENAI_API_MODEL: process.env.OPENAI_API_MODEL as GPTModelType || 'gpt-3.5-turbo',
   DEFAULT_INTERVAL_VALUE: Number(process.env.DEFAULT_INTERVAL_VALUE) || 5000,
   DEFAULT_USERS_AMOUNT: Number(process.env.DEFAULT_USERS_AMOUNT) || 100,
+  CRON_MINUTES: Number(process.env.CRON_MINUTES) || 55,
 };
 
 Object.keys(config)

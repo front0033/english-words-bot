@@ -10,7 +10,7 @@ const bot = new Bot(String(config.TELEGRAM_TOKEN));
 const botService = new BotService();
 
 const apiSendMessage = (chatId: number, text: string) => {
-  bot.api.sendMessage(chatId, text);
+  bot.api.sendMessage(chatId, text, { parse_mode: 'HTML' });
 }
 
 let sendInterval: any; // TODO: записать состояние для кажддого юзера в базу: подписан от на сообщения от бота или нет
@@ -111,7 +111,7 @@ bot.callbackQuery([UNSUBSCRIBE, /\/stop/], async (ctx) => {
   ctx.reply('stopping!');
 });
 
-cron.schedule('*/2 * * * *', async () => {
+cron.schedule(`*/${config.CRON_MINUTES} * * * *`, async () => {
   console.log('[schedule]: started...');
   const wordsDataItems = await botService.selectByTopUsers(config.DEFAULT_USERS_AMOUNT);
 

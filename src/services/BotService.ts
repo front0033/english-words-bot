@@ -201,7 +201,7 @@ export class BotService {
     const formattedText = text?.replace(word, `<b>${word}</b>`) || '';
     const translateText = ` (<b>${word}</b>: ${translate}).`;
     const message = `${formattedText} ${translateText}`;
-
+    console.log('[sendMessages] message ', message);
     await sendMessage(userId, message);
 
     if (rest.length) {
